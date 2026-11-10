@@ -24,7 +24,7 @@ let mouseY = 0;
 let isDrawing = false;
 
 // Потенціометр (4): значення від 0.000 до 1.000 (від 0 до 16 В)
-let knob = { x: 140, y: 158, r: 22, value: 0.0, angle: -Math.PI * 0.75, isDragging: false };
+let knob = { x: 140, y: 155, r: 22, value: 0.0, angle: -Math.PI * 0.75, isDragging: false };
 
 // Зонд (3): x_cm від 0.0 до 5.0 см (крок 0.5 см)
 let probeState = { x_cm: 0.0, isDragging: false };
@@ -33,28 +33,29 @@ let probeState = { x_cm: 0.0, isDragging: false };
 const noiseTable = [0.00, 0.06, -0.05, 0.08, -0.07, 0.09, -0.04, 0.07, -0.08, 0.05, -0.02];
 
 // Клеми на стенді (рознесені з запасом, щоб підписи не наповзали)
+// Клеми на стенді (ванна перенесена праворуч, інфо-табличка — ліворуч)
 const terminals = [
     // Джерело ~16 В
-    { id: "src_left",  name: "0 В",   x: 45,  y: 72,  r: 7, color: "#1E1E1E" },
-    { id: "src_right", name: "16 В",  x: 115, y: 72,  r: 7, color: "#FF4B4B" },
+    { id: "src_left",  name: "0 В",    x: 45,  y: 72,  r: 7, color: "#1E1E1E" },
+    { id: "src_right", name: "16 В",   x: 115, y: 72,  r: 7, color: "#FF4B4B" },
 
     // Потенціометр (4)
-    { id: "pot_left",  name: "R1",    x: 38,  y: 192, r: 7, color: "#666666" },
-    { id: "pot_right", name: "R2",    x: 242, y: 192, r: 7, color: "#666666" },
-    { id: "pot_wiper", name: "Повз.", x: 140, y: 108, r: 7, color: "#32CD32" },
+    { id: "pot_left",  name: "R1",     x: 38,  y: 185, r: 7, color: "#666666" },
+    { id: "pot_right", name: "R2",     x: 242, y: 185, r: 7, color: "#666666" },
+    { id: "pot_wiper", name: "Повз.",  x: 140, y: 108, r: 7, color: "#32CD32" },
 
-    // Вольтметр (V) — клеми на світлій панелі під екраном
-    { id: "volt_1",    name: "COM",   x: 315, y: 98,  r: 7, color: "#333333" },
-    { id: "volt_2",    name: "V",     x: 395, y: 98,  r: 7, color: "#FF8C00" },
+    // Вольтметр (V)
+    { id: "volt_1",    name: "COM",    x: 315, y: 98,  r: 7, color: "#333333" },
+    { id: "volt_2",    name: "V",      x: 395, y: 98,  r: 7, color: "#FF8C00" },
 
-    // Осцилограф-нуль-індикатор (5) — клеми під екраном
-    { id: "osc_1",     name: "Y1",    x: 535, y: 122, r: 7, color: "#2E8B57" },
-    { id: "osc_2",     name: "Y2",    x: 625, y: 122, r: 7, color: "#2E8B57" },
+    // Осцилограф-нуль-індикатор (5)
+    { id: "osc_1",     name: "Y1",     x: 535, y: 122, r: 7, color: "#2E8B57" },
+    { id: "osc_2",     name: "Y2",     x: 625, y: 122, r: 7, color: "#2E8B57" },
 
-    // Ванна з водою: електроди 1 і 2 + зонд 3
-    { id: "el_1",      name: "Ел. 1", x: 35,  y: 315, r: 7, color: "#FF4B4B" },
-    { id: "el_2",      name: "Ел. 2", x: 395, y: 315, r: 7, color: "#1E1E1E" },
-    { id: "probe",     name: "Зонд 3",x: 215, y: 230, r: 7, color: "#0077CC" }
+    // Велика ванна з водою праворуч: електроди 1 і 2 + зонд 3
+    { id: "el_1",      name: "Ел. 1",  x: 295, y: 275, r: 7, color: "#FF4B4B" },
+    { id: "el_2",      name: "Ел. 2",  x: 675, y: 275, r: 7, color: "#1E1E1E" },
+    { id: "probe",     name: "Зонд 3", x: 485, y: 148, r: 7, color: "#0077CC" }
 ];
 
 function hasWire(t1, t2) {
