@@ -32,8 +32,7 @@ let probeState = { x_cm: 0.0, isDragging: false };
 // Реалістична похибка приладів для кожної точки x (від -0.09 до +0.09 В)
 const noiseTable = [0.00, 0.06, -0.05, 0.08, -0.07, 0.09, -0.04, 0.07, -0.08, 0.05, -0.02];
 
-// Клеми на стенді (рознесені з запасом, щоб підписи не наповзали)
-// Клеми на стенді (ванна перенесена праворуч, інфо-табличка — ліворуч)
+// Клеми на стенді
 const terminals = [
     // Джерело ~16 В
     { id: "src_left",  name: "0 В",    x: 45,  y: 72,  r: 7, color: "#1E1E1E" },
@@ -65,17 +64,36 @@ function hasWire(t1, t2) {
     );
 }
 
+// Пошук в ширину: перевіряє, чи з'єднані клеми t1 та t2 ланцюжком дротів
+function areNodesConnected(startId, targetId) {
+    if (startId === targetId) return true;
+    const visited = new Set([startId]);
+    const queue = [startId];
+    while (queue.length > 0) {
+        const curr = queue.shift();
+        for (const w of wires) {
+            let next = null;
+            if (w.from.id === curr) next = w.to.id;
+            else if (w.to.id === curr) next = w.from.id;
+            if (next && !visited.has(next)) {
+                if (next === targetId) return true;
+                visited.add(next);
+                queue.push(next);
+            }
+        }
+    }
+    return false;
+}
+
 // Потенціал у точці зонда (В)
 function getProbePotential() {
-    const idx = Math.round(probeState.x_cm * 2); // 0..10
+    const idx = Math.round(probeState.x_cm * 2);
     const noise = (idx === 0 || idx === 10) ? 0.0 : noiseTable[idx];
     let phi_ideal = 0.0;
 
     if (currentStage === "stage1") {
-        // Плоский конденсатор (r = 5.0 см, φ2 - φ1 = 16 В)
         phi_ideal = (16.0 / 5.0) * probeState.x_cm;
     } else {
-        // Циліндричний конденсатор (R1 = 2.5 см, R2 = 7.5 см, k = 14.57 В)
         const k = 16.0 / Math.log(7.5 / 2.5);
         phi_ideal = k * Math.log((probeState.x_cm + 2.5) / 2.5);
     }
@@ -83,19 +101,33 @@ function getProbePotential() {
 }
 
 function getCircuitState() {
-    const bathOk = hasWire("src_left", "el_2") && hasWire("src_right", "el_1");
-    const potOk  = hasWire("src_left", "pot_left") && hasWire("src_right", "pot_right");
-    const oscOk  = (hasWire("probe", "osc_1") && hasWire("pot_wiper", "osc_2")) ||
-                   (hasWire("probe", "osc_2") && hasWire("pot_wiper", "osc_1"));
-    const voltOk = (hasWire("el_2", "volt_1") && hasWire("pot_wiper", "volt_2")) ||
-                   (hasWire("pot_left", "volt_1") && hasWire("pot_wiper", "volt_2")) ||
-                   (hasWire("src_left", "volt_1") && hasWire("pot_wiper", "volt_2"));
+    // 1. Живлення ванни (пряме або інверсне)
+    const bathDirect  = areNodesConnected("src_left", "el_2") && areNodesConnected("src_right", "el_1");
+    const bathReverse = areNodesConnected("src_left", "el_1") && areNodesConnected("src_right", "el_2");
+    const bathOk = bathDirect || bathReverse;
+
+    // 2. Живлення потенціометра (пряме або інверсне)
+    const potDirect  = areNodesConnected("src_left", "pot_left") && areNodesConnected("src_right", "pot_right");
+    const potReverse = areNodesConnected("src_left", "pot_right") && areNodesConnected("src_right", "pot_left");
+    const potOk = potDirect || potReverse;
+
+    // 3. Осцилограф у діагоналі містка (між зондом 3 та повзунком)
+    const oscOk = (areNodesConnected("probe", "osc_1") && areNodesConnected("pot_wiper", "osc_2")) ||
+                  (areNodesConnected("probe", "osc_2") && areNodesConnected("pot_wiper", "osc_1"));
+
+    // 4. Вольтметр між нульовим полюсом і повзунком потенціометра (у будь-якій полярності)
+    const zeroNode = potDirect ? "src_left" : "src_right";
+    const voltOk = potOk && (
+        (areNodesConnected(zeroNode, "volt_1") && areNodesConnected("pot_wiper", "volt_2")) ||
+        (areNodesConnected(zeroNode, "volt_2") && areNodesConnected("pot_wiper", "volt_1"))
+    );
 
     const potVoltage = knob.value * 16.0;
-    const probeVoltage = getProbePotential();
+    const rawProbe = getProbePotential();
+    const probeVoltage = (bathDirect === potDirect) ? rawProbe : (16.0 - rawProbe);
 
     return {
-        voltReading: (potOk && voltOk) ? potVoltage : 0.0,
+        voltReading: voltOk ? potVoltage : 0.0,
         oscActive: (bathOk && potOk && oscOk),
         unbalance: potVoltage - probeVoltage,
         bathOk, potOk, oscOk, voltOk
