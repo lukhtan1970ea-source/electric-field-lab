@@ -1,7 +1,7 @@
-// Координати ванни та робочої доріжки зонда (від x=0 до x=5.0 см)
-const bathBox = { x: 58, y: 245, w: 314, h: 140 };
-const flatTrack = { xStart: 315, xEnd: 115, y: 315 };
-const cylCenter = { x: 215, y: 318, rInner: 14, rOuter: 54 };
+// Велика ванна праворуч (від x=318 до x=652, висота 218 px)
+const bathBox = { x: 318, y: 162, w: 334, h: 218 };
+const flatTrack = { xStart: 605, xEnd: 365, y: 275 };
+const cylCenter = { x: 485, y: 275, rInner: 22, rOuter: 86 };
 
 function getProbeCoords() {
     const ratio = probeState.x_cm / 5.0;
@@ -126,7 +126,7 @@ function drawBench() {
         ctx.fillStyle = "rgba(0, 255, 102, 0.35)";
         ctx.fill();
     }
-    // 5. Ванна з водою та електродами (1, 2)
+        // 5. Велика ванна з водою праворуч (електроди 1, 2)
     ctx.fillStyle = "#D6EAF8";
     ctx.fillRect(bathBox.x, bathBox.y, bathBox.w, bathBox.h);
     ctx.strokeStyle = "#2874A6";
@@ -138,43 +138,43 @@ function drawBench() {
     ctx.textAlign = "left";
     ctx.fillText(
         currentStage === "stage1" ? "Ванна з водою (плоскі електроди)" : "Ванна з водою (циліндричні електроди)",
-        bathBox.x + 8, bathBox.y + 15
+        bathBox.x + 10, bathBox.y + 18
     );
 
     if (currentStage === "stage1") {
         // Плоскі електроди 1 (ліворуч, 16 В) та 2 (праворуч, 0 В)
         ctx.fillStyle = "#B03A2E";
-        ctx.fillRect(107, 275, 8, 80);
+        ctx.fillRect(357, 210, 8, 125);
         ctx.fillStyle = "#2C3E50";
-        ctx.fillRect(315, 275, 8, 80);
+        ctx.fillRect(605, 210, 8, 125);
 
         // Лінійка координат x (0..5 см)
         ctx.strokeStyle = "#333";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(flatTrack.xEnd, 366);
-        ctx.lineTo(flatTrack.xStart, 366);
+        ctx.moveTo(flatTrack.xEnd, 348);
+        ctx.lineTo(flatTrack.xStart, 348);
         ctx.stroke();
 
         ctx.fillStyle = "#111";
-        ctx.font = "9px monospace";
+        ctx.font = "10px monospace";
         ctx.textAlign = "center";
         for (let i = 0; i <= 10; i++) {
             const xVal = i * 0.5;
             const px = flatTrack.xStart + (i / 10) * (flatTrack.xEnd - flatTrack.xStart);
             ctx.beginPath();
-            ctx.moveTo(px, 362);
-            ctx.lineTo(px, 370);
+            ctx.moveTo(px, 344);
+            ctx.lineTo(px, 352);
             ctx.stroke();
-            if (i % 2 === 0) ctx.fillText(xVal.toFixed(0), px, 379);
+            if (i % 2 === 0) ctx.fillText(xVal.toFixed(0), px, 364);
         }
     } else {
-        // Циліндричні електроди (вид зверху: два повних концентричних кільця)
+        // Великі концентричні кільця циліндричного конденсатора
         // Зовнішнє кільце R2 = 7.5 см (Ел. 1 — потенційний 16 В)
         ctx.beginPath();
         ctx.arc(cylCenter.x, cylCenter.y, cylCenter.rOuter, 0, 2 * Math.PI);
         ctx.strokeStyle = "#B03A2E";
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 6;
         ctx.stroke();
 
         // Внутрішній циліндр R1 = 2.5 см (Ел. 2 — нульовий 0 В)
@@ -186,55 +186,63 @@ function drawBench() {
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Радіальна шкала вздовж осі руху зонда (від x=0 біля R1 до x=5 см біля R2)
-        ctx.strokeStyle = "#444";
+        // Радіальна шкала з поділками від R1 (x=0) до R2 (x=5 см)
+        ctx.strokeStyle = "#333";
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(cylCenter.x + cylCenter.rInner, cylCenter.y);
         ctx.lineTo(cylCenter.x + cylCenter.rOuter, cylCenter.y);
         ctx.stroke();
 
+        for (let i = 0; i <= 10; i++) {
+            const rx = cylCenter.x + cylCenter.rInner + (i / 10) * (cylCenter.rOuter - cylCenter.rInner);
+            ctx.beginPath();
+            ctx.moveTo(rx, cylCenter.y - 3);
+            ctx.lineTo(rx, cylCenter.y + 3);
+            ctx.stroke();
+        }
+
         ctx.fillStyle = "#1B4F72";
-        ctx.font = "9px monospace";
+        ctx.font = "bold 10px monospace";
         ctx.textAlign = "left";
-        ctx.fillText("R1=2.5см", bathBox.x + 8, 355);
-        ctx.fillText("R2=7.5см", bathBox.x + 8, 370);
+        ctx.fillText("R1 = 2.5 см", bathBox.x + 10, 352);
+        ctx.fillText("R2 = 7.5 см", bathBox.x + 10, 368);
     }
 
     // Рухомий зонд (3)
     const pCoords = getProbeCoords();
     ctx.beginPath();
-    ctx.arc(pCoords.x, pCoords.y, 7, 0, 2 * Math.PI);
+    ctx.arc(pCoords.x, pCoords.y, 7.5, 0, 2 * Math.PI);
     ctx.fillStyle = "#0077CC";
     ctx.fill();
     ctx.strokeStyle = "#FFF";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Інформаційна плашка праворуч від ванни
+    // Інформаційна плашка ліворуч під потенціометром
     ctx.fillStyle = "#FFF";
-    ctx.fillRect(435, 245, 240, 140);
+    ctx.fillRect(20, 232, 245, 148);
     ctx.strokeStyle = "#BBB";
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(435, 245, 240, 140);
+    ctx.strokeRect(20, 232, 245, 148);
 
     ctx.fillStyle = "#111";
     ctx.font = "bold 13px Arial";
     ctx.textAlign = "left";
-    ctx.fillText(`Положення зонда (3): x = ${probeState.x_cm.toFixed(1)} см`, 448, 272);
+    ctx.fillText(`Положення зонда: x = ${probeState.x_cm.toFixed(1)} см`, 32, 258);
 
     ctx.font = "11px Arial";
     ctx.fillStyle = "#444";
-    ctx.fillText("• Тягніть синій зонд мишкою у ванні", 448, 298);
-    ctx.fillText("• Або натисніть ↑ / ↓ для кроку 0.5 см", 448, 318);
-    ctx.fillText("• ← / → — точна підстройка потенціометра", 448, 338);
+    ctx.fillText("• Тягніть синій зонд мишкою у ванні", 32, 284);
+    ctx.fillText("• Або натисніть ↑ / ↓ (крок 0.5 см)", 32, 304);
+    ctx.fillText("• ← / → — точна підстройка R", 32, 324);
 
     const isReady = state.bathOk && state.potOk && state.oscOk && state.voltOk;
     ctx.font = "bold 11px Arial";
     ctx.fillStyle = isReady ? "#1E8449" : "#C0392B";
     ctx.fillText(
-        isReady ? "✅ Схему зібрано правильно!" : "⚠️ З'єднайте всі клеми згідно з Рис. 3.4",
-        448, 366
+        isReady ? "✅ Схему зібрано правильно!" : "⚠️ З'єднайте клеми за Рис. 3.4",
+        32, 358
     );
 
     // Клеми та контрастні підписи
@@ -247,7 +255,6 @@ function drawBench() {
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        // Світлий текст на темних приладах, темний — на світлому фоні
         const isDarkBody = (t.id === "volt_1" || t.id === "volt_2" || t.id === "osc_1" || t.id === "osc_2");
         ctx.fillStyle = isDarkBody ? "#FFFFFF" : "#111111";
         ctx.font = "bold 10px monospace";
