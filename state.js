@@ -1,0 +1,102 @@
+const canvas = document.getElementById('benchCanvas');
+const ctx = canvas.getContext('2d');
+
+// === БЛОК КРИСТАЛЬНОЇ ЧІТКОСТІ ===
+const dpr = window.devicePixelRatio || 1;
+const baseWidth = 700;
+const baseHeight = 400;
+canvas.width = baseWidth * dpr;
+canvas.height = baseHeight * dpr;
+canvas.style.width = baseWidth + 'px';
+canvas.style.height = baseHeight + 'px';
+ctx.scale(dpr, dpr);
+// ================================
+
+const clearBtn = document.getElementById('clearBtn');
+
+// Поточний етап (підміняється з canvas_bench.py)
+let currentStage = "stage1";
+
+let wires = [];
+let activeTerminal = null;
+let mouseX = 0;
+let mouseY = 0;
+let isDrawing = false;
+
+// Потенціометр (4): значення від 0.000 до 1.000 (від 0 до 16 В)
+let knob = { x: 140, y: 158, r: 22, value: 0.0, angle: -Math.PI * 0.75, isDragging: false };
+
+// Зонд (3): x_cm від 0.0 до 5.0 см (крок 0.5 см)
+let probeState = { x_cm: 0.0, isDragging: false };
+
+// Реалістична похибка приладів для кожної точки x (від -0.09 до +0.09 В)
+const noiseTable = [0.00, 0.06, -0.05, 0.08, -0.07, 0.09, -0.04, 0.07, -0.08, 0.05, -0.02];
+
+// Клеми на стенді (рознесені з запасом, щоб підписи не наповзали)
+const terminals = [
+    // Джерело ~16 В
+    { id: "src_left",  name: "0 В",   x: 45,  y: 72,  r: 7, color: "#1E1E1E" },
+    { id: "src_right", name: "16 В",  x: 115, y: 72,  r: 7, color: "#FF4B4B" },
+
+    // Потенціометр (4)
+    { id: "pot_left",  name: "R1",    x: 38,  y: 192, r: 7, color: "#666666" },
+    { id: "pot_right", name: "R2",    x: 242, y: 192, r: 7, color: "#666666" },
+    { id: "pot_wiper", name: "Повз.", x: 140, y: 108, r: 7, color: "#32CD32" },
+
+    // Вольтметр (V) — клеми на світлій панелі під екраном
+    { id: "volt_1",    name: "COM",   x: 315, y: 98,  r: 7, color: "#333333" },
+    { id: "volt_2",    name: "V",     x: 395, y: 98,  r: 7, color: "#FF8C00" },
+
+    // Осцилограф-нуль-індикатор (5) — клеми під екраном
+    { id: "osc_1",     name: "Y1",    x: 535, y: 122, r: 7, color: "#2E8B57" },
+    { id: "osc_2",     name: "Y2",    x: 625, y: 122, r: 7, color: "#2E8B57" },
+
+    // Ванна з водою: електроди 1 і 2 + зонд 3
+    { id: "el_1",      name: "Ел. 1", x: 35,  y: 315, r: 7, color: "#FF4B4B" },
+    { id: "el_2",      name: "Ел. 2", x: 395, y: 315, r: 7, color: "#1E1E1E" },
+    { id: "probe",     name: "Зонд 3",x: 215, y: 230, r: 7, color: "#0077CC" }
+];
+
+function hasWire(t1, t2) {
+    return wires.some(w =>
+        (w.from.id === t1 && w.to.id === t2) ||
+        (w.from.id === t2 && w.to.id === t1)
+    );
+}
+
+// Потенціал у точці зонда (В)
+function getProbePotential() {
+    const idx = Math.round(probeState.x_cm * 2); // 0..10
+    const noise = (idx === 0 || idx === 10) ? 0.0 : noiseTable[idx];
+    let phi_ideal = 0.0;
+
+    if (currentStage === "stage1") {
+        // Плоский конденсатор (r = 5.0 см, φ2 - φ1 = 16 В)
+        phi_ideal = (16.0 / 5.0) * probeState.x_cm;
+    } else {
+        // Циліндричний конденсатор (R1 = 2.5 см, R2 = 7.5 см, k = 14.57 В)
+        const k = 16.0 / Math.log(7.5 / 2.5);
+        phi_ideal = k * Math.log((probeState.x_cm + 2.5) / 2.5);
+    }
+    return Math.min(Math.max(phi_ideal + noise, 0.0), 16.0);
+}
+
+function getCircuitState() {
+    const bathOk = hasWire("src_left", "el_2") && hasWire("src_right", "el_1");
+    const potOk  = hasWire("src_left", "pot_left") && hasWire("src_right", "pot_right");
+    const oscOk  = (hasWire("probe", "osc_1") && hasWire("pot_wiper", "osc_2")) ||
+                   (hasWire("probe", "osc_2") && hasWire("pot_wiper", "osc_1"));
+    const voltOk = (hasWire("el_2", "volt_1") && hasWire("pot_wiper", "volt_2")) ||
+                   (hasWire("pot_left", "volt_1") && hasWire("pot_wiper", "volt_2")) ||
+                   (hasWire("src_left", "volt_1") && hasWire("pot_wiper", "volt_2"));
+
+    const potVoltage = knob.value * 16.0;
+    const probeVoltage = getProbePotential();
+
+    return {
+        voltReading: (potOk && voltOk) ? potVoltage : 0.0,
+        oscActive: (bathOk && potOk && oscOk),
+        unbalance: potVoltage - probeVoltage,
+        bathOk, potOk, oscOk, voltOk
+    };
+}
