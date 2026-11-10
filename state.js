@@ -47,14 +47,14 @@ const terminals = [
     { id: "volt_1",    name: "COM",    x: 315, y: 98,  r: 7, color: "#333333" },
     { id: "volt_2",    name: "V",      x: 395, y: 98,  r: 7, color: "#FF8C00" },
 
-    // Осцилограф-нуль-індикатор (5)
-    { id: "osc_1",     name: "Y1",     x: 535, y: 122, r: 7, color: "#2E8B57" },
-    { id: "osc_2",     name: "Y2",     x: 625, y: 122, r: 7, color: "#2E8B57" },
+    // Осцилограф-нуль-індикатор (5) — коаксіальний роз'єм Y з розгалуженням
+    { id: "osc_1",     name: "Жила",   x: 545, y: 152, r: 7, color: "#FF4B4B" },
+    { id: "osc_2",     name: "Екран",  x: 615, y: 152, r: 7, color: "#1E1E1E" },
 
     // Велика ванна з водою праворуч: електроди 1 і 2 + зонд 3
     { id: "el_1",      name: "Ел. 1",  x: 295, y: 275, r: 7, color: "#FF4B4B" },
     { id: "el_2",      name: "Ел. 2",  x: 675, y: 275, r: 7, color: "#1E1E1E" },
-    { id: "probe",     name: "Зонд 3", x: 485, y: 148, r: 7, color: "#0077CC" }
+    { id: "probe",     name: "Зонд 3", x: 475, y: 152, r: 7, color: "#0077CC" }
 ];
 
 function hasWire(t1, t2) {
