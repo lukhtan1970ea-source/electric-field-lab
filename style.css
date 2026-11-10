@@ -1,0 +1,26 @@
+#canvas-container { 
+    text-align: center; 
+    font-family: monospace; 
+}
+canvas { 
+    border: 3px solid #4A4A4A; 
+    background-color: #F5F5F5; 
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.15); 
+    border-radius: 8px; 
+    cursor: default; 
+    outline: none;
+}
+button { 
+    background-color: #FF4B4B; 
+    color: white; 
+    border: none; 
+    padding: 8px 16px; 
+    font-size: 14px; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    margin-top: 10px; 
+}
+button:hover { 
+    background-color: #E03E3E; 
+}
