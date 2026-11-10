@@ -126,6 +126,50 @@ function drawBench() {
         ctx.fillStyle = "rgba(0, 255, 102, 0.35)";
         ctx.fill();
     }
+        // Коаксіальний роз'єм BNC (Y) на панелі осцилографа та розгалужений кабель
+    const bncX = 580, bncY = 118;
+    ctx.beginPath();
+    ctx.arc(bncX, bncY, 9, 0, 2 * Math.PI);
+    ctx.fillStyle = "#BDC3C7";
+    ctx.fill();
+    ctx.strokeStyle = "#7F8C8D";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(bncX, bncY, 3.5, 0, 2 * Math.PI);
+    ctx.fillStyle = "#2C3E50";
+    ctx.fill();
+
+    ctx.fillStyle = "#FFF";
+    ctx.font = "bold 11px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText("Y", bncX - 13, bncY + 4);
+
+    // Товстий коаксіальний кабель від BNC до розгалуження
+    const splitY = 138;
+    ctx.beginPath();
+    ctx.moveTo(bncX, bncY + 9);
+    ctx.lineTo(bncX, splitY);
+    ctx.strokeStyle = "#111111";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // Розгалуження на червоний провід (Жила) та чорний провід (Екран)
+    ctx.beginPath();
+    ctx.moveTo(bncX, splitY);
+    ctx.lineTo(545, 152);
+    ctx.strokeStyle = "#C0392B";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(bncX, splitY);
+    ctx.lineTo(615, 152);
+    ctx.strokeStyle = "#1E1E1E";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
         // 5. Велика ванна з водою праворуч (електроди 1, 2)
     ctx.fillStyle = "#D6EAF8";
     ctx.fillRect(bathBox.x, bathBox.y, bathBox.w, bathBox.h);
@@ -255,11 +299,12 @@ function drawBench() {
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        const isDarkBody = (t.id === "volt_1" || t.id === "volt_2" || t.id === "osc_1" || t.id === "osc_2");
+                const isDarkBody = (t.id === "volt_1" || t.id === "volt_2");
         ctx.fillStyle = isDarkBody ? "#FFFFFF" : "#111111";
         ctx.font = "bold 10px monospace";
         ctx.textAlign = "center";
-        ctx.fillText(t.name, t.x, t.y - t.r - 4);
+        const labelY = (t.id === "osc_1" || t.id === "osc_2") ? (t.y + t.r + 11) : (t.y - t.r - 4);
+        ctx.fillText(t.name, t.x, labelY);
     });
 
     // Дроти
