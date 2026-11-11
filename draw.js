@@ -1,20 +1,25 @@
 // Координати ванни та робочих зон (прив'язаних до сантиметрової сітки)
 const bathBox = { x: 278, y: 152, w: 340, h: 236 };
-// Плоский конденсатор: великий масштаб (1 см = 44 px, 5 см = 220 px)
-const flatTrack = { xStart: 560, xEnd: 340, y: 266 };
-// Циліндричний конденсатор: масштаб 1 см = 14 px (R1 = 35 px, R2 = 105 px)
+// Плоский конденсатор: 1 см = 44 px, 5 см = 220 px
+const flatTrack = { xStart: 560, xEnd: 340, yCenter: 266, yHalfSpan: 55 };
+// Циліндричний конденсатор: 1 см = 14 px (R1 = 35 px, R2 = 105 px)
 const cylCenter = { x: 448, y: 274, rInner: 35, rOuter: 105 };
 
 function getProbeCoords() {
     const ratio = probeState.x_cm / 5.0;
     if (currentStage === "stage1") {
-        return {
-            x: flatTrack.xStart + ratio * (flatTrack.xEnd - flatTrack.xStart),
-            y: flatTrack.y
-        };
+        // 2D-рух між пластинами: x_cm уздовж поля, y_cm уздовж еквіпотенціальної площини
+        const px = flatTrack.xStart + ratio * (flatTrack.xEnd - flatTrack.xStart);
+        const py = flatTrack.yCenter + probeState.y_cm * 44;
+        return { x: px, y: py };
     } else {
+        // 2D-рух у кільцевому зазорі: радіус r = R1 + x_cm, кут theta = probeState.y_cm
         const r = cylCenter.rInner + ratio * (cylCenter.rOuter - cylCenter.rInner);
-        return { x: cylCenter.x + r, y: cylCenter.y };
+        const theta = probeState.y_cm;
+        return {
+            x: cylCenter.x + r * Math.cos(theta),
+            y: cylCenter.y + r * Math.sin(theta)
+        };
     }
 }
 
@@ -34,7 +39,7 @@ function drawBench() {
     ctx.textAlign = "center";
     ctx.fillText("Джерело ~16 В", 77, 28);
 
-    // 2. Потенціометр (4) — зсунутий вліво і вниз
+    // 2. Потенціометр (4)
     ctx.fillStyle = "#D8D8D8";
     ctx.fillRect(28, 174, 148, 118);
     ctx.strokeStyle = "#333";
@@ -169,15 +174,13 @@ function drawBench() {
     ctx.strokeStyle = "#1E1E1E";
     ctx.lineWidth = 2.5;
     ctx.stroke();
-
-        // 5. Велика ванна з водою та сантиметровою сіткою, прив'язаною до електродів
+    // 5. Велика ванна з водою та сантиметровою сіткою, прив'язаною до електродів
     ctx.fillStyle = "#EBF5FB";
     ctx.fillRect(bathBox.x, bathBox.y, bathBox.w, bathBox.h);
 
-    // Визначаємо крок та опорну точку сітки залежно від етапу
-    const gridStep = (currentStage === "stage1") ? 44 : 14; // 1 см = 44 px (плоский) або 14 px (циліндр.)
-    const anchorX  = (currentStage === "stage1") ? flatTrack.xEnd : cylCenter.x;
-    const anchorY  = (currentStage === "stage1") ? flatTrack.y    : cylCenter.y;
+    const gridStep = (currentStage === "stage1") ? 44 : 14;
+    const anchorX  = (currentStage === "stage1") ? flatTrack.xEnd    : cylCenter.x;
+    const anchorY  = (currentStage === "stage1") ? flatTrack.yCenter : cylCenter.y;
 
     ctx.save();
     ctx.beginPath();
@@ -187,7 +190,6 @@ function drawBench() {
     ctx.strokeStyle = "rgba(40, 116, 166, 0.25)";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    // Вертикальні лінії сітки вліво та вправо від робочої грані електрода / центру
     for (let gx = anchorX; gx <= bathBox.x + bathBox.w; gx += gridStep) {
         ctx.moveTo(gx, bathBox.y);
         ctx.lineTo(gx, bathBox.y + bathBox.h);
@@ -196,7 +198,6 @@ function drawBench() {
         ctx.moveTo(gx, bathBox.y);
         ctx.lineTo(gx, bathBox.y + bathBox.h);
     }
-    // Горизонтальні лінії сітки вгору та вниз від осі
     for (let gy = anchorY; gy <= bathBox.y + bathBox.h; gy += gridStep) {
         ctx.moveTo(bathBox.x, gy);
         ctx.lineTo(bathBox.x + bathBox.w, gy);
@@ -226,11 +227,11 @@ function drawBench() {
     ctx.fillText(`Зонд: x = ${probeState.x_cm.toFixed(1)} см`, bathBox.x + bathBox.w - 8, bathBox.y + 15);
 
     if (currentStage === "stage1") {
-        // Плоскі електроди: робочі грані строго лежать на лініях сітки x=340 та x=560 (відстань 5 см)
+        // Плоскі електроди: робочі грані строго лежать на лініях сітки x=340 та x=560
         ctx.fillStyle = "#B03A2E";
-        ctx.fillRect(flatTrack.xEnd - 8, 200, 8, 132); // Ел. 1 (16 В), робоча грань x = 340
+        ctx.fillRect(flatTrack.xEnd - 8, 200, 8, 132);
         ctx.fillStyle = "#2C3E50";
-        ctx.fillRect(flatTrack.xStart, 200, 8, 132);   // Ел. 2 (0 В), робоча грань x = 560
+        ctx.fillRect(flatTrack.xStart, 200, 8, 132);
 
         // Лінійка координат x (0..5 см)
         ctx.strokeStyle = "#222";
@@ -247,7 +248,7 @@ function drawBench() {
             const xVal = i * 0.5;
             const px = flatTrack.xStart + (i / 10) * (flatTrack.xEnd - flatTrack.xStart);
             const isWhole = (i % 2 === 0);
-            const tickHalf = isWhole ? 6 : 3; // Цілі поділки довші, половинні — коротші
+            const tickHalf = isWhole ? 6 : 3;
             ctx.beginPath();
             ctx.moveTo(px, 346 - tickHalf);
             ctx.lineTo(px, 346 + tickHalf);
@@ -256,14 +257,12 @@ function drawBench() {
         }
     } else {
         // Циліндричні електроди (вид зверху: два концентричних ПОРОЖНИСТИХ кільця)
-        // Зовнішнє кільце R2 = 7.5 см (105 px)
         ctx.beginPath();
         ctx.arc(cylCenter.x, cylCenter.y, cylCenter.rOuter, 0, 2 * Math.PI);
         ctx.strokeStyle = "#B03A2E";
         ctx.lineWidth = 5;
         ctx.stroke();
 
-        // Внутрішній порожнистий циліндр R1 = 2.5 см (35 px)
         ctx.beginPath();
         ctx.arc(cylCenter.x, cylCenter.y, cylCenter.rInner, 0, 2 * Math.PI);
         ctx.strokeStyle = "#2C3E50";
@@ -281,7 +280,7 @@ function drawBench() {
         for (let i = 0; i <= 10; i++) {
             const rx = cylCenter.x + cylCenter.rInner + (i / 10) * (cylCenter.rOuter - cylCenter.rInner);
             const isWhole = (i % 2 === 0);
-            const tickHalf = isWhole ? 5 : 2.5; // Цілі поділки довші, 0.5 — коротші
+            const tickHalf = isWhole ? 5 : 2.5;
             ctx.beginPath();
             ctx.moveTo(rx, cylCenter.y - tickHalf);
             ctx.lineTo(rx, cylCenter.y + tickHalf);
@@ -295,8 +294,21 @@ function drawBench() {
         ctx.fillText("R2=7.5см", bathBox.x + 8, 380);
     }
 
-    // Рухомий зонд (3)
+    // Тоненький гнучкий проводок, що з'єднує власне зонд з клемою "Зонд 3"
     const pCoords = getProbeCoords();
+    const probeTerm = terminals.find(t => t.id === "probe");
+    if (probeTerm) {
+        ctx.beginPath();
+        ctx.moveTo(pCoords.x, pCoords.y);
+        const midX = (pCoords.x + probeTerm.x) / 2 + 18;
+        const midY = (pCoords.y + probeTerm.y) / 2 - 14;
+        ctx.quadraticCurveTo(midX, midY, probeTerm.x, probeTerm.y);
+        ctx.strokeStyle = "#005A9C";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    // Рухомий зонд (3)
     ctx.beginPath();
     ctx.arc(pCoords.x, pCoords.y, 7.5, 0, 2 * Math.PI);
     ctx.fillStyle = "#0077CC";
@@ -323,7 +335,7 @@ function drawBench() {
         ctx.fillText(t.name, t.x, labelY);
     });
 
-    // Дроти
+    // З'єднувальні дроти стенду
     wires.forEach(w => {
         ctx.beginPath();
         ctx.moveTo(w.from.x, w.from.y);
