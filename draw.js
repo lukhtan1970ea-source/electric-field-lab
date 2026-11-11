@@ -1,7 +1,9 @@
-// Ванна з водою (масштаб 1 см = 14 px)
+// Координати ванни та робочих зон (прив'язаних до сантиметрової сітки)
 const bathBox = { x: 278, y: 152, w: 340, h: 236 };
-const flatTrack = { xStart: 483, xEnd: 413, y: 266 }; // 5.0 см = 70 px (крок 0.5 см = 7 px)
-const cylCenter = { x: 448, y: 274, rInner: 35, rOuter: 105 }; // R1 = 2.5 см (35 px), R2 = 7.5 см (105 px)
+// Плоский конденсатор: великий масштаб (1 см = 44 px, 5 см = 220 px)
+const flatTrack = { xStart: 560, xEnd: 340, y: 266 };
+// Циліндричний конденсатор: масштаб 1 см = 14 px (R1 = 35 px, R2 = 105 px)
+const cylCenter = { x: 448, y: 274, rInner: 35, rOuter: 105 };
 
 function getProbeCoords() {
     const ratio = probeState.x_cm / 5.0;
@@ -21,7 +23,7 @@ function drawBench() {
     const state = getCircuitState();
     knob.angle = -Math.PI * 0.75 + knob.value * (Math.PI * 1.5);
 
-    // 1. Джерело ~16 В (піднято вгору на y = 8)
+    // 1. Джерело ~16 В
     ctx.fillStyle = "#EAEAEA";
     ctx.fillRect(15, 8, 125, 68);
     ctx.strokeStyle = "#333";
@@ -32,14 +34,14 @@ function drawBench() {
     ctx.textAlign = "center";
     ctx.fillText("Джерело ~16 В", 77, 28);
 
-    // 2. Потенціометр (4)
+    // 2. Потенціометр (4) — зсунутий вліво і вниз
     ctx.fillStyle = "#D8D8D8";
-    ctx.fillRect(45, 118, 160, 118);
+    ctx.fillRect(28, 174, 148, 118);
     ctx.strokeStyle = "#333";
-    ctx.strokeRect(45, 118, 160, 118);
+    ctx.strokeRect(28, 174, 148, 118);
     ctx.fillStyle = "#222";
     ctx.font = "bold 11px Arial";
-    ctx.fillText("Потенціометр (4)", 125, 226);
+    ctx.fillText("Потенціометр (4)", 102, 282);
 
     // Ручка потенціометра
     ctx.beginPath();
@@ -57,7 +59,7 @@ function drawBench() {
     ctx.stroke();
     ctx.lineWidth = 1.5;
 
-    // 3. Вольтметр (V) (піднято вгору на y = 8)
+    // 3. Вольтметр (V)
     ctx.fillStyle = "#222222";
     ctx.fillRect(245, 8, 160, 96);
     ctx.strokeStyle = "#333";
@@ -76,7 +78,7 @@ function drawBench() {
     ctx.font = "bold 12px Arial";
     ctx.fillText("В", 388, 48);
 
-    // 4. Осцилограф-нуль-індикатор (5) — екран ліворуч і витягнутий вниз, BNC праворуч
+    // 4. Осцилограф-нуль-індикатор (5)
     ctx.fillStyle = "#2F3640";
     ctx.fillRect(458, 8, 226, 118);
     ctx.strokeStyle = "#333";
@@ -87,7 +89,6 @@ function drawBench() {
     ctx.textAlign = "left";
     ctx.fillText("ОСЦИЛОГРАФ (5) — НУЛЬ-ІНДИКАТОР", 468, 21);
 
-    // Збільшений екран зліва
     const scrX = 468, scrY = 27, scrW = 148, scrH = 90;
     ctx.fillStyle = "#082914";
     ctx.fillRect(scrX, scrY, scrW, scrH);
@@ -103,7 +104,6 @@ function drawBench() {
     ctx.lineTo(scrX + scrW, scrY + scrH / 2);
     ctx.stroke();
 
-    // Промінь осцилографа
     const cx = scrX + scrW / 2;
     const cy = scrY + scrH / 2;
     if (state.oscActive) {
@@ -128,7 +128,7 @@ function drawBench() {
         ctx.fill();
     }
 
-    // Коаксіальний роз'єм BNC (Y) праворуч на панелі + довгий кабель вниз
+    // Коаксіальний роз'єм BNC (Y) + довгий кабель вниз праворуч
     const bncX = 656, bncY = 76;
     ctx.beginPath();
     ctx.arc(bncX, bncY, 9, 0, 2 * Math.PI);
@@ -148,7 +148,6 @@ function drawBench() {
     ctx.textAlign = "center";
     ctx.fillText("Y", bncX, bncY - 14);
 
-    // Довгий коаксіальний кабель вниз праворуч від ванни
     const splitY = 158;
     ctx.beginPath();
     ctx.moveTo(bncX, bncY + 9);
@@ -170,24 +169,44 @@ function drawBench() {
     ctx.strokeStyle = "#1E1E1E";
     ctx.lineWidth = 2.5;
     ctx.stroke();
-    // 5. Велика ванна з водою та сантиметровою сіткою (1 см = 14 px)
+
+        // 5. Велика ванна з водою та сантиметровою сіткою, прив'язаною до електродів
     ctx.fillStyle = "#EBF5FB";
     ctx.fillRect(bathBox.x, bathBox.y, bathBox.w, bathBox.h);
 
-    // Сантиметрова сітка всередині ванни (крок 14 px = 1 см)
-    const gridStep = 14;
-    ctx.strokeStyle = "rgba(40, 116, 166, 0.22)";
+    // Визначаємо крок та опорну точку сітки залежно від етапу
+    const gridStep = (currentStage === "stage1") ? 44 : 14; // 1 см = 44 px (плоский) або 14 px (циліндр.)
+    const anchorX  = (currentStage === "stage1") ? flatTrack.xEnd : cylCenter.x;
+    const anchorY  = (currentStage === "stage1") ? flatTrack.y    : cylCenter.y;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bathBox.x, bathBox.y, bathBox.w, bathBox.h);
+    ctx.clip();
+
+    ctx.strokeStyle = "rgba(40, 116, 166, 0.25)";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    for (let gx = bathBox.x + gridStep; gx < bathBox.x + bathBox.w; gx += gridStep) {
+    // Вертикальні лінії сітки вліво та вправо від робочої грані електрода / центру
+    for (let gx = anchorX; gx <= bathBox.x + bathBox.w; gx += gridStep) {
         ctx.moveTo(gx, bathBox.y);
         ctx.lineTo(gx, bathBox.y + bathBox.h);
     }
-    for (let gy = bathBox.y + gridStep; gy < bathBox.y + bathBox.h; gy += gridStep) {
+    for (let gx = anchorX - gridStep; gx >= bathBox.x; gx -= gridStep) {
+        ctx.moveTo(gx, bathBox.y);
+        ctx.lineTo(gx, bathBox.y + bathBox.h);
+    }
+    // Горизонтальні лінії сітки вгору та вниз від осі
+    for (let gy = anchorY; gy <= bathBox.y + bathBox.h; gy += gridStep) {
+        ctx.moveTo(bathBox.x, gy);
+        ctx.lineTo(bathBox.x + bathBox.w, gy);
+    }
+    for (let gy = anchorY - gridStep; gy >= bathBox.y; gy -= gridStep) {
         ctx.moveTo(bathBox.x, gy);
         ctx.lineTo(bathBox.x + bathBox.w, gy);
     }
     ctx.stroke();
+    ctx.restore();
 
     // Рамка ванни
     ctx.strokeStyle = "#2874A6";
@@ -207,34 +226,36 @@ function drawBench() {
     ctx.fillText(`Зонд: x = ${probeState.x_cm.toFixed(1)} см`, bathBox.x + bathBox.w - 8, bathBox.y + 15);
 
     if (currentStage === "stage1") {
-        // Плоскі електроди 1 (ліворуч, 16 В) та 2 (праворуч, 0 В) на відстані 5 см (70 px)
+        // Плоскі електроди: робочі грані строго лежать на лініях сітки x=340 та x=560 (відстань 5 см)
         ctx.fillStyle = "#B03A2E";
-        ctx.fillRect(flatTrack.xEnd - 8, 204, 8, 124);
+        ctx.fillRect(flatTrack.xEnd - 8, 200, 8, 132); // Ел. 1 (16 В), робоча грань x = 340
         ctx.fillStyle = "#2C3E50";
-        ctx.fillRect(flatTrack.xStart, 204, 8, 124);
+        ctx.fillRect(flatTrack.xStart, 200, 8, 132);   // Ел. 2 (0 В), робоча грань x = 560
 
         // Лінійка координат x (0..5 см)
         ctx.strokeStyle = "#222";
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(flatTrack.xEnd, 340);
-        ctx.lineTo(flatTrack.xStart, 340);
+        ctx.moveTo(flatTrack.xEnd, 346);
+        ctx.lineTo(flatTrack.xStart, 346);
         ctx.stroke();
 
         ctx.fillStyle = "#111";
-        ctx.font = "10px monospace";
+        ctx.font = "bold 10px monospace";
         ctx.textAlign = "center";
         for (let i = 0; i <= 10; i++) {
             const xVal = i * 0.5;
             const px = flatTrack.xStart + (i / 10) * (flatTrack.xEnd - flatTrack.xStart);
+            const isWhole = (i % 2 === 0);
+            const tickHalf = isWhole ? 6 : 3; // Цілі поділки довші, половинні — коротші
             ctx.beginPath();
-            ctx.moveTo(px, 336);
-            ctx.lineTo(px, 344);
+            ctx.moveTo(px, 346 - tickHalf);
+            ctx.lineTo(px, 346 + tickHalf);
             ctx.stroke();
-            if (i % 2 === 0) ctx.fillText(xVal.toFixed(0), px, 356);
+            if (isWhole) ctx.fillText(xVal.toFixed(0), px, 364);
         }
     } else {
-        // Циліндричні електроди (вид зверху: два концентричних кільця у масштабі 1 см = 14 px)
+        // Циліндричні електроди (вид зверху: два концентричних ПОРОЖНИСТИХ кільця)
         // Зовнішнє кільце R2 = 7.5 см (105 px)
         ctx.beginPath();
         ctx.arc(cylCenter.x, cylCenter.y, cylCenter.rOuter, 0, 2 * Math.PI);
@@ -242,13 +263,11 @@ function drawBench() {
         ctx.lineWidth = 5;
         ctx.stroke();
 
-        // Внутрішній циліндр R1 = 2.5 см (35 px)
+        // Внутрішній порожнистий циліндр R1 = 2.5 см (35 px)
         ctx.beginPath();
         ctx.arc(cylCenter.x, cylCenter.y, cylCenter.rInner, 0, 2 * Math.PI);
-        ctx.fillStyle = "#2C3E50";
-        ctx.fill();
-        ctx.strokeStyle = "#111";
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#2C3E50";
+        ctx.lineWidth = 4.5;
         ctx.stroke();
 
         // Радіальна шкала з поділками від R1 (x=0) до R2 (x=5 см)
@@ -261,9 +280,11 @@ function drawBench() {
 
         for (let i = 0; i <= 10; i++) {
             const rx = cylCenter.x + cylCenter.rInner + (i / 10) * (cylCenter.rOuter - cylCenter.rInner);
+            const isWhole = (i % 2 === 0);
+            const tickHalf = isWhole ? 5 : 2.5; // Цілі поділки довші, 0.5 — коротші
             ctx.beginPath();
-            ctx.moveTo(rx, cylCenter.y - 3);
-            ctx.lineTo(rx, cylCenter.y + 3);
+            ctx.moveTo(rx, cylCenter.y - tickHalf);
+            ctx.lineTo(rx, cylCenter.y + tickHalf);
             ctx.stroke();
         }
 
