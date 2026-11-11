@@ -30,7 +30,7 @@ with tab1:
         "осцилографа 5 не стягнеться у точку. Зніміть значення потенціалу з вольтметра **V**."
     )
 
-    col1, col2 = st.columns([3.1, 1], gap="medium")
+    col1, col2 = st.columns([3.5, 1], gap="medium")
     with col1:
         interactive_bench("stage1", key="bench_flat")
 
