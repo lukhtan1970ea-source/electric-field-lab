@@ -30,16 +30,15 @@ with tab1:
         "осцилографа 5 не стягнеться у точку. Зніміть значення потенціалу з вольтметра **V**."
     )
 
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([2.3, 1], gap="medium")
     with col1:
         interactive_bench("stage1", key="bench_flat")
 
     with col2:
         st.markdown("#### 📟 Протокол вимірювань")
-        st.write("Занесіть координату зонда та знятий потенціал у таблицю:")
 
         x_in_flat = st.number_input(
-            "Координата зонда x (см)",
+            "Координата x (см)",
             min_value=0.0,
             max_value=5.0,
             step=0.5,
@@ -47,7 +46,7 @@ with tab1:
             key="x_in_flat"
         )
         phi_in_flat = st.number_input(
-            "Потенціал φ_екс за вольтметром V (В)",
+            "Потенціал φ_екс (В)",
             min_value=0.0,
             max_value=16.5,
             step=0.01,
@@ -55,17 +54,18 @@ with tab1:
             key="phi_in_flat"
         )
 
-        st.markdown("---")
-        if st.button("📥 Записати точку в таблицю", key="btn_add_flat", use_container_width=True):
-            new_row = pd.DataFrame([{"x (см)": round(x_in_flat, 1), "φ_екс (В)": round(phi_in_flat, 2)}])
-            st.session_state.data_flat = pd.concat([st.session_state.data_flat, new_row], ignore_index=True)
-            st.rerun()
+        btn_c1, btn_c2 = st.columns([2, 1])
+        with btn_c1:
+            if st.button("📥 Записати", key="btn_add_flat", use_container_width=True):
+                new_row = pd.DataFrame([{"x (см)": round(x_in_flat, 1), "φ_екс (В)": round(phi_in_flat, 2)}])
+                st.session_state.data_flat = pd.concat([st.session_state.data_flat, new_row], ignore_index=True)
+                st.rerun()
+        with btn_c2:
+            if st.button("🧹 Очистити", key="clear_flat", use_container_width=True):
+                st.session_state.data_flat = pd.DataFrame(columns=["x (см)", "φ_екс (В)"])
+                st.rerun()
 
-        if st.button("🧹 Очистити таблицю етапу 1", key="clear_flat"):
-            st.session_state.data_flat = pd.DataFrame(columns=["x (см)", "φ_екс (В)"])
-            st.rerun()
-
-        st.dataframe(st.session_state.data_flat, use_container_width=True)
+        st.dataframe(st.session_state.data_flat, use_container_width=True, height=230)
 
 # ==========================================
 # ВКЛАДКА 2: Циліндричний конденсатор
@@ -79,16 +79,15 @@ with tab2:
         "балансуйте місток потенціометром 4 за осцилографом 5 та фіксуйте покази вольтметра **V**."
     )
 
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([2.3, 1], gap="medium")
     with col1:
         interactive_bench("stage2", key="bench_cyl")
 
     with col2:
         st.markdown("#### 📟 Протокол вимірювань")
-        st.write("Занесіть відстань від внутрішнього електрода та потенціал у таблицю:")
 
         x_in_cyl = st.number_input(
-            "Відстань від внутрішнього електрода x (см)",
+            "Відстань x (см)",
             min_value=0.0,
             max_value=5.0,
             step=0.5,
@@ -96,7 +95,7 @@ with tab2:
             key="x_in_cyl"
         )
         phi_in_cyl = st.number_input(
-            "Потенціал φ_екс за вольтметром V (В)",
+            "Потенціал φ_екс (В)",
             min_value=0.0,
             max_value=16.5,
             step=0.01,
@@ -104,14 +103,15 @@ with tab2:
             key="phi_in_cyl"
         )
 
-        st.markdown("---")
-        if st.button("📥 Записати точку в таблицю", key="btn_add_cyl", use_container_width=True):
-            new_row = pd.DataFrame([{"x (см)": round(x_in_cyl, 1), "φ_екс (В)": round(phi_in_cyl, 2)}])
-            st.session_state.data_cyl = pd.concat([st.session_state.data_cyl, new_row], ignore_index=True)
-            st.rerun()
+        btn_c3, btn_c4 = st.columns([2, 1])
+        with btn_c3:
+            if st.button("📥 Записати", key="btn_add_cyl", use_container_width=True):
+                new_row = pd.DataFrame([{"x (см)": round(x_in_cyl, 1), "φ_екс (В)": round(phi_in_cyl, 2)}])
+                st.session_state.data_cyl = pd.concat([st.session_state.data_cyl, new_row], ignore_index=True)
+                st.rerun()
+        with btn_c4:
+            if st.button("🧹 Очистити", key="clear_cyl", use_container_width=True):
+                st.session_state.data_cyl = pd.DataFrame(columns=["x (см)", "φ_екс (В)"])
+                st.rerun()
 
-        if st.button("🧹 Очистити таблицю етапу 2", key="clear_cyl"):
-            st.session_state.data_cyl = pd.DataFrame(columns=["x (см)", "φ_екс (В)"])
-            st.rerun()
-
-        st.dataframe(st.session_state.data_cyl, use_container_width=True)
+        st.dataframe(st.session_state.data_cyl, use_container_width=True, height=230)
