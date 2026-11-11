@@ -23,8 +23,8 @@ let mouseX = 0;
 let mouseY = 0;
 let isDrawing = false;
 
-// Потенціометр (4): значення від 0.000 до 1.000 (від 0 до 16 В)
-let knob = { x: 125, y: 185, r: 24, value: 0.0, angle: -Math.PI * 0.75, isDragging: false };
+// Потенціометр (4) зсунуто вліво і вниз
+let knob = { x: 102, y: 242, r: 24, value: 0.0, angle: -Math.PI * 0.75, isDragging: false };
 
 // Зонд (3): x_cm від 0.0 до 5.0 см (крок 0.5 см)
 let probeState = { x_cm: 0.0, isDragging: false };
@@ -38,10 +38,10 @@ const terminals = [
     { id: "src_left",  name: "0 В",    x: 42,  y: 58,  r: 7, color: "#1E1E1E" },
     { id: "src_right", name: "16 В",   x: 112, y: 58,  r: 7, color: "#FF4B4B" },
 
-    // Потенціометр (4)
-    { id: "pot_left",  name: "R1",     x: 28,  y: 185, r: 7, color: "#666666" },
-    { id: "pot_right", name: "R2",     x: 222, y: 185, r: 7, color: "#666666" },
-    { id: "pot_wiper", name: "Повз.",  x: 125, y: 108, r: 7, color: "#32CD32" },
+        // Потенціометр (4) — зсунутий вліво і вниз
+    { id: "pot_left",  name: "R1",     x: 16,  y: 242, r: 7, color: "#666666" },
+    { id: "pot_right", name: "R2",     x: 188, y: 242, r: 7, color: "#666666" },
+    { id: "pot_wiper", name: "Повз.",  x: 102, y: 164, r: 7, color: "#32CD32" },
 
     // Вольтметр (V)
     { id: "volt_1",    name: "COM",    x: 285, y: 86,  r: 7, color: "#333333" },
