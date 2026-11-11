@@ -9,7 +9,7 @@ function updateCursor(x, y) {
     canvas.style.cursor = hover ? "pointer" : "default";
 }
 
-// Клавіатура: ← / → для потенціометра, ↑ / ↓ для зонда
+// Клавіатура: ← / → для потенціометра, ↑ / ↓ для кроку зонда
 window.addEventListener('keydown', (e) => {
     if (document.activeElement !== canvas) return;
 
@@ -69,16 +69,25 @@ canvas.addEventListener('mousemove', (e) => {
         knob.value = Math.min(Math.max(norm, 0), 1);
         drawBench();
     } else if (probeState.isDragging) {
-        let ratio = 0.0;
         if (currentStage === "stage1") {
-            ratio = (mouseX - flatTrack.xStart) / (flatTrack.xEnd - flatTrack.xStart);
+            // Вільне 2D-переміщення між плоскими пластинами з м'якою прив'язкою 0.5 см
+            const ratioX = (mouseX - flatTrack.xStart) / (flatTrack.xEnd - flatTrack.xStart);
+            const clampedX = Math.min(Math.max(ratioX, 0), 1);
+            probeState.x_cm = Math.round(clampedX * 10) * 0.5;
+
+            const rawYcm = (mouseY - flatTrack.yCenter) / 44.0;
+            const clampedY = Math.min(Math.max(rawYcm, -1.2), 1.2);
+            probeState.y_cm = Math.round(clampedY * 2) * 0.5;
         } else {
-            const xStart = cylCenter.x + cylCenter.rInner;
-            const xEnd = cylCenter.x + cylCenter.rOuter;
-            ratio = (mouseX - xStart) / (xEnd - xStart);
+            // Вільне 2D-переміщення в кільці: радіус r з кроком 0.5 см та будь-який кут навколо центру
+            const dx = mouseX - cylCenter.x;
+            const dy = mouseY - cylCenter.y;
+            const distPx = Math.hypot(dx, dy);
+            const ratioR = (distPx - cylCenter.rInner) / (cylCenter.rOuter - cylCenter.rInner);
+            const clampedR = Math.min(Math.max(ratioR, 0), 1);
+            probeState.x_cm = Math.round(clampedR * 10) * 0.5;
+            probeState.y_cm = Math.atan2(dy, dx);
         }
-        const clamped = Math.min(Math.max(ratio, 0), 1);
-        probeState.x_cm = Math.round(clamped * 10) * 0.5;
         drawBench();
     } else if (isDrawing) {
         drawBench();
@@ -109,3 +118,4 @@ clearBtn.addEventListener('click', () => {
 });
 
 setInterval(drawBench, 100);
+
